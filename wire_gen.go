@@ -8,57 +8,55 @@ package main
 
 import (
 	"fmt"
-	"github.com/stephennancekivell/go-future/future"
 	"time"
 )
 
 // Injectors from wire.go:
 
 func BuildHomeScreen() HomeScreen {
-	myFuture := GetGlobalBrandName()
-	mainMyFuture := GetGlobalBrandImage()
-	myFuture2 := GetGlobalBrand(myFuture, mainMyFuture)
-	homeScreen := NewHomeScreen(myFuture2, myFuture)
+	globalBrandNameFuture := GetGlobalBrandName()
+	globalBrandImageFuture := GetGlobalBrandImage()
+	globalBrandFuture := GetGlobalBrand(globalBrandNameFuture, globalBrandImageFuture)
+	homeScreen := NewHomeScreen(globalBrandFuture, globalBrandNameFuture)
 	return homeScreen
 }
 
 func BuildMenuScreen() MenuScreen {
-	myFuture := GetGlobalBrandName()
-	mainMyFuture := GetGlobalBrandImage()
-	myFuture2 := GetGlobalBrand(myFuture, mainMyFuture)
-	menuScreen := NewMenuScreen(myFuture2, mainMyFuture)
+	globalBrandNameFuture := GetGlobalBrandName()
+	globalBrandImageFuture := GetGlobalBrandImage()
+	globalBrandFuture := GetGlobalBrand(globalBrandNameFuture, globalBrandImageFuture)
+	menuScreen := NewMenuScreen(globalBrandFuture, globalBrandImageFuture)
 	return menuScreen
 }
 
 // wire.go:
 
-type MyFuture[T any] struct {
-	F future.Future[T]
-}
-
 type GlobalBrandImage struct {
 	URL string
 }
 
-func GetGlobalBrandImage() MyFuture[GlobalBrandImage] {
-	f := future.New(func() GlobalBrandImage {
-		time.Sleep(2 * time.Second)
-		fmt.Println("hello from GetImage")
-		return GlobalBrandImage{URL: "KFC image URL"}
-	})
+type GlobalBrandImageFuture Provider[GlobalBrandImage]
 
-	return MyFuture[GlobalBrandImage]{F: f}
+func GetGlobalBrandImage() GlobalBrandImageFuture {
+	return GlobalBrandImageFuture(
+		NewProvider(func() GlobalBrandImage {
+			time.Sleep(2 * time.Second)
+			fmt.Println("hello from GetImage")
+			return GlobalBrandImage{URL: "KFC image URL"}
+		}))
 }
 
 type GlobalBrandName string
 
-func GetGlobalBrandName() MyFuture[GlobalBrandName] {
-	f := future.New(func() GlobalBrandName {
-		time.Sleep(2 * time.Second)
-		fmt.Println("hello from GetGlobalBrandName")
-		return GlobalBrandName("KFC")
-	})
-	return MyFuture[GlobalBrandName]{F: f}
+type GlobalBrandNameFuture Provider[GlobalBrandName]
+
+func GetGlobalBrandName() GlobalBrandNameFuture {
+	return GlobalBrandNameFuture(
+		NewProvider(func() GlobalBrandName {
+			time.Sleep(2 * time.Second)
+			fmt.Println("hello from GetGlobalBrandName")
+			return GlobalBrandName("KFC")
+		}))
 }
 
 type GlobalBrand struct {
@@ -66,16 +64,18 @@ type GlobalBrand struct {
 	Img  GlobalBrandImage
 }
 
-func GetGlobalBrand(name MyFuture[GlobalBrandName], img MyFuture[GlobalBrandImage]) MyFuture[GlobalBrand] {
-	f := future.New(func() GlobalBrand {
-		time.Sleep(1 * time.Second)
-		fmt.Println("hello from GetGlobalBrand")
-		return GlobalBrand{
-			Name: name.F.Get(),
-			Img:  img.F.Get(),
-		}
-	})
-	return MyFuture[GlobalBrand]{F: f}
+type GlobalBrandFuture Provider[GlobalBrand]
+
+func GetGlobalBrand(name GlobalBrandNameFuture, img GlobalBrandImageFuture) GlobalBrandFuture {
+	return GlobalBrandFuture(
+		NewProvider(func() GlobalBrand {
+			time.Sleep(1 * time.Second)
+			fmt.Println("hello from GetGlobalBrand")
+			return GlobalBrand{
+				Name: name.F.Get(),
+				Img:  img.F.Get(),
+			}
+		}))
 }
 
 type HomeScreen struct {
@@ -83,7 +83,7 @@ type HomeScreen struct {
 	Brand GlobalBrand
 }
 
-func NewHomeScreen(gb MyFuture[GlobalBrand], name MyFuture[GlobalBrandName]) HomeScreen {
+func NewHomeScreen(gb GlobalBrandFuture, name GlobalBrandNameFuture) HomeScreen {
 	return HomeScreen{
 		Title: name.F.Get(),
 		Brand: gb.F.Get(),
@@ -95,7 +95,7 @@ type MenuScreen struct {
 	Brand GlobalBrand
 }
 
-func NewMenuScreen(gb MyFuture[GlobalBrand], img MyFuture[GlobalBrandImage]) MenuScreen {
+func NewMenuScreen(gb GlobalBrandFuture, img GlobalBrandImageFuture) MenuScreen {
 	return MenuScreen{
 		Icon:  img.F.Get(),
 		Brand: gb.F.Get(),
