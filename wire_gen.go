@@ -35,28 +35,32 @@ type GlobalBrandImage struct {
 	URL string
 }
 
-type GlobalBrandImageFuture Provider[GlobalBrandImage]
+type GlobalBrandImageFuture struct {
+	Provider[GlobalBrandImage]
+}
 
 func GetGlobalBrandImage() GlobalBrandImageFuture {
-	return GlobalBrandImageFuture(
+	return GlobalBrandImageFuture{
 		NewProvider(func() GlobalBrandImage {
 			time.Sleep(2 * time.Second)
 			fmt.Println("hello from GetImage")
 			return GlobalBrandImage{URL: "KFC image URL"}
-		}))
+		})}
 }
 
 type GlobalBrandName string
 
-type GlobalBrandNameFuture Provider[GlobalBrandName]
+type GlobalBrandNameFuture struct {
+	Provider[GlobalBrandName]
+}
 
 func GetGlobalBrandName() GlobalBrandNameFuture {
-	return GlobalBrandNameFuture(
+	return GlobalBrandNameFuture{
 		NewProvider(func() GlobalBrandName {
 			time.Sleep(2 * time.Second)
 			fmt.Println("hello from GetGlobalBrandName")
 			return GlobalBrandName("KFC")
-		}))
+		})}
 }
 
 type GlobalBrand struct {
@@ -64,18 +68,20 @@ type GlobalBrand struct {
 	Img  GlobalBrandImage
 }
 
-type GlobalBrandFuture Provider[GlobalBrand]
+type GlobalBrandFuture struct {
+	Provider[GlobalBrand]
+}
 
 func GetGlobalBrand(name GlobalBrandNameFuture, img GlobalBrandImageFuture) GlobalBrandFuture {
-	return GlobalBrandFuture(
+	return GlobalBrandFuture{
 		NewProvider(func() GlobalBrand {
 			time.Sleep(1 * time.Second)
 			fmt.Println("hello from GetGlobalBrand")
 			return GlobalBrand{
-				Name: name.F.Get(),
-				Img:  img.F.Get(),
+				Name: name.Value(),
+				Img:  img.Value(),
 			}
-		}))
+		})}
 }
 
 type HomeScreen struct {
@@ -85,8 +91,8 @@ type HomeScreen struct {
 
 func NewHomeScreen(gb GlobalBrandFuture, name GlobalBrandNameFuture) HomeScreen {
 	return HomeScreen{
-		Title: name.F.Get(),
-		Brand: gb.F.Get(),
+		Title: name.Value(),
+		Brand: gb.Value(),
 	}
 }
 
@@ -97,7 +103,7 @@ type MenuScreen struct {
 
 func NewMenuScreen(gb GlobalBrandFuture, img GlobalBrandImageFuture) MenuScreen {
 	return MenuScreen{
-		Icon:  img.F.Get(),
-		Brand: gb.F.Get(),
+		Icon:  img.Value(),
+		Brand: gb.Value(),
 	}
 }

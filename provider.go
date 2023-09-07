@@ -5,10 +5,14 @@ import (
 )
 
 type Provider[T any] struct {
-	F future.Future[T]
+	f future.Future[T]
 }
 
 func NewProvider[T any](init func() T) Provider[T] {
 	f := future.New[T](init)
-	return Provider[T]{F: f}
+	return Provider[T]{f: f}
+}
+
+func (p Provider[T]) Value() T {
+	return p.f.Get()
 }
