@@ -1,18 +1,26 @@
 package main
 
-import (
-	"github.com/stephennancekivell/go-future/future"
-)
+import "sync"
 
 type Provider[T any] struct {
-	f future.Future[T]
+	wg    sync.WaitGroup
+	value T
 }
 
-func NewProvider[T any](init func() T) Provider[T] {
-	f := future.New[T](init)
-	return Provider[T]{f: f}
+func NewProvider[T any](init func() T) *Provider[T] {
+	p := Provider[T]{}
+	p.wg.Add(1)
+
+	go func() {
+		p.value = init()
+		p.wg.Done()
+	}()
+
+	return &p
 }
 
-func (p Provider[T]) Value() T {
-	return p.f.Get()
+func (p *Provider[T]) Value() T {
+	p.wg.Wait()
+
+	return p.value
 }
